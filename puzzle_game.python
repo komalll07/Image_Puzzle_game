@@ -1,0 +1,198 @@
+import pygame, random
+from pygame import mixer
+
+pygame.init()
+
+WINDOW_WIDTH = 1500
+WINDOW_HEIGHT = 800
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+pygame.display.set_caption('Puzzle Game')
+
+FPS = 10
+clock = pygame.time.Clock()
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+CRIMSON = (220, 20, 60)
+ORANGE = (255, 127, 0)
+
+bg = pygame.image.load('dog 3.jpg')
+bg_rect = bg.get_rect()
+bg_rect.topleft=(0, 0)
+# background sound
+mixer.music.load('music.mp3')
+mixer.music.play(-1)
+
+
+font_title = pygame.font.Font('Hello Avocado.ttf',90)
+font_content = pygame.font.Font('Hello Avocado.ttf',65)
+
+#start screen
+title_text = font_title.render('puzzle game',True,RED)
+title_rect = title_text.get_rect()
+title_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 -120)
+
+choose_text = font_content.render('choose your difficulties ??',True,WHITE)
+choose_rect = choose_text.get_rect()
+choose_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 -30)
+
+levelI_text = font_content.render("press '1'-LEVEL 1(3X3)",True,ORANGE)
+levelI_rect = levelI_text.get_rect()
+levelI_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +40)
+
+levelII_text = font_content.render("press '2'-LEVEL 2(4x4)",True,ORANGE)
+levelII_rect = levelII_text.get_rect()
+levelII_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +95)
+
+levelIII_text = font_content.render("press '3'-LEVEL 3(5x5)",True,ORANGE)
+levelIII_rect = levelIII_text.get_rect()
+levelIII_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +160)
+
+levelIV_text = font_content.render("press '4'-LEVEL 4(6x6)",True,ORANGE)
+levelIV_rect = levelIV_text.get_rect()
+levelIV_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +220)
+
+levelV_text = font_content.render("press '5'-LEVEL 5(7x7)",True,ORANGE)
+levelV_rect = levelIV_text.get_rect()
+levelV_rect.center =(WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +290)
+
+
+play_again_text = font_title.render('play again ?',True,WHITE)
+play_again_rect = play_again_text.get_rect()
+play_again_rect.center=(WINDOW_WIDTH//2 , WINDOW_HEIGHT //2-40)
+
+continue_text = font_content.render('press space',True,WHITE)
+continue_rect = continue_text.get_rect()
+continue_rect.center = (WINDOW_WIDTH//2,WINDOW_HEIGHT//2 +60)
+
+
+image_selected= None
+is_game_over = False
+show_start_screen = True
+
+rows = None
+cols = None
+
+
+cell_width = None
+cell_height = None
+
+
+cells = []
+
+def start_game(mode):
+    global cells,cell_height, cell_width, show_start_screen
+
+    rows = mode
+    cols = mode
+    num_cells = rows*cols
+
+    cell_width = WINDOW_WIDTH //rows
+    cell_height = WINDOW_HEIGHT // cols
+
+    cell=[]
+    rand_indexes = list(range(0, num_cells))
+
+    for i in range(num_cells):
+        x = (i % rows) * cell_width
+        y = (i // cols) * cell_height
+        rect = pygame.Rect(x, y, cell_width, cell_height)
+        rand_pos = random.choice(rand_indexes)
+        rand_indexes.remove(rand_pos)
+        cells.append({"rect": rect, 'border': WHITE, 'order': i, 'pos': rand_pos})
+
+
+
+    show_start_screen = False
+
+
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+           running = False
+
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+
+            if is_game_over:
+              keys = pygame.key.get_pressed()
+              if keys[pygame.K_SPACE]:
+                is_game_over = False
+                show_start_screen = True
+
+            if show_start_screen:
+                keys= pygame.key.get_pressed()
+                if keys[pygame.K_1]:
+                    start_game(3)
+                elif keys[pygame.K_2]:
+                    start_game(4)
+                elif keys[pygame.K_3]:
+                    start_game(5)
+                elif keys[pygame.K_4]:
+                    start_game(6)
+                elif keys[pygame.K_5]:
+                    start_game(7)
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button==1 and not is_game_over :
+           mouse_pos= pygame.mouse.get_pos()
+
+           for cell in cells:
+                rect=cell['rect']
+                order=cell['order']
+
+                if rect.collidepoint(mouse_pos):
+                   if not image_selected:
+                       image_selected=cell
+                       cell['border']=RED
+                   else :
+                        current_image=cell
+                        if current_image['order'] !=image_selected['order']:
+                            image_sound= mixer.Sound('image.mpeg')
+                            image_sound.play()
+                           # swapping of images
+                            temp=image_selected['pos']
+                            cells[image_selected['order']]['pos']=cells[current_image['order']]['pos']
+                            cells[current_image['order']]['pos']=temp
+
+                            cells[image_selected['order']]['border']=WHITE
+                            image_selected=None
+
+# check puzzle game is over
+                            is_game_over = True
+                            for cell in cells :
+                                if cell['order'] != cell['pos']:
+                                    is_game_over = False
+
+    if show_start_screen:
+        screen.fill(BLACK)
+        screen.blit(title_text,title_rect)
+        screen.blit(choose_text, choose_rect)
+        screen.blit(levelI_text, levelI_rect)
+        screen.blit(levelII_text, levelII_rect)
+        screen.blit(levelIII_text, levelIII_rect)
+        screen.blit(levelIV_text, levelIV_rect)
+        screen.blit(levelV_text, levelV_rect)
+    else:
+      screen.fill(WHITE)
+
+      if not is_game_over:
+        for i, val in enumerate(cells):
+           pos = cells[i]['pos']
+           img_area = pygame.Rect(cells[pos]['rect'].x, cells[pos]['rect'].y, cell_width, cell_height)
+           screen.blit(bg,cells[i]['rect'], img_area)
+           pygame.draw.rect(screen, cells[i]['border'], cells[i]['rect'], 1)
+
+      else:
+        screen.blit(bg,bg_rect)
+        screen.blit(play_again_text,play_again_rect)
+        screen.blit(continue_text,continue_rect)
+
+    pygame.display.update()
+    
+
+pygame.quit()
